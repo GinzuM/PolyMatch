@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poly Match</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/ui.css">
+    <link rel="stylesheet" href="styles/game.css">
+</head>
+<body class="dark-theme">
+
+    <div id="game-container" style="transition: transform 0.2s ease;">
+        
+        <div id="notification-area" class="hidden">Mensagem</div>
+
+        <div id="screen-menu" class="screen">
+            <div class="logo-container">
+                <h1>POLY<span>MATCH</span></h1>
+                <p>Construa. Sobreviva. Dê Match.</p>
+            </div>
+            <div class="menu-buttons">
+                <button onclick="startGame()" class="btn-primary">Novo Jogo</button>
+                <button onclick="openSettings()" class="btn-secondary">Configurações & Save</button>
+            </div>
+        </div>
+
+        <div id="screen-settings" class="screen hidden">
+            <h2>Configurações</h2>
+            
+            <div class="settings-group">
+                <h3 class="highlight-text" style="font-size: 14px; margin-bottom: 10px;">Tamanho da Interface</h3>
+                <input type="range" id="ui-scale-slider" min="0.8" max="1.2" step="0.2" value="1" oninput="changeUIScale()" style="width: 100%; cursor: pointer;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-top:5px;">
+                    <span>Pequena</span><span>Normal</span><span>Grande</span>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggle-mobile" onchange="toggleMobileControls()"> 
+                    <span>Ativar D-Pad Virtual (Mobile)</span>
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <h3 class="highlight-text">Controles (PC)</h3>
+                <ul class="controls-list">
+                    <li><b>⬅️ ➡️ / A D:</b> Mover Peça</li>
+                    <li><b>⬇️ / S:</b> Descer Rápido</li>
+                    <li><b>⬆️ / W:</b> Girar Peça</li>
+                    <li><b>Espaço:</b> Queda Instantânea (Hard Drop)</li>
+                    <li><b>C ou Shift:</b> Guardar Peça (Hold)</li>
+                    <li><b>1, 2, 3, 4:</b> Invocar Poderes do Deck</li>
+                </ul>
+            </div>
+
+            <div class="save-group">
+                <h3>Gerenciar Progresso</h3>
+                <button onclick="downloadSave()" class="btn-primary">Exportar Save</button>
+                <textarea id="save-code-input" rows="3" placeholder="Cole seu código de save aqui..."></textarea>
+                <button onclick="loadGame()" class="btn-action">Importar Save</button>
+            </div>
+
+            <button onclick="closeSettings()" class="btn-secondary btn-back">Voltar</button>
+        </div>
+
+        <div id="screen-creation" class="screen hidden">
+            <div class="status-bar">
+                <span>Montando Perfil...</span>
+                <span id="question-counter">1/10</span>
+            </div>
+            <h2 id="question-text" style="margin-top: 15px;">Pergunta?</h2>
+            <div id="options-container" class="options-list"></div>
+        </div>
+
+        <div id="screen-hub" class="screen hidden">
+            
+            <div class="top-bar">
+                <div class="resource clickable" onclick="openPlayerProfile()" title="Ver Perfil e XP">
+                    ⭐ <span id="ui-level">1</span>
+                </div>
+                <div class="resource" title="Moedas">💰 <span id="ui-money">0</span></div>
+                <div class="resource" title="Poeira de Tetromino">✨ <span id="ui-dust">0</span></div>
+                <div class="resource clickable energy-text" onclick="checkEnergyTime()" title="Energia (Likes)">
+                    ❤️ <span id="ui-energy">5/5</span>
+                </div>
+                <button onclick="openSettings()" class="btn-icon">⚙️</button>
+            </div>
+
+            <div class="hub-content">
+                
+                <div id="tab-swipe" class="tab-pane">
+                    <div class="swipe-card" id="piece-card">
+                        <h2 class="piece-name" id="pc-name">Peça</h2>
+                        <div id="pc-render-area" class="piece-wrapper"></div>
+                        <div class="piece-info" id="pc-info">Info</div>
+                    </div>
+                    <div class="swipe-actions">
+                        <button class="btn-swipe dislike" onclick="swipePiece(false)">❌</button>
+                        <button class="btn-swipe super-like" onclick="useSuperLike()">🌟</button>
+                        <button class="btn-swipe like" onclick="swipePiece(true)">❤️</button>
+                    </div>
+                </div>
+
+                <div id="tab-chat" class="tab-pane hidden">
+                    <div id="chat-list-view" class="list-view"></div>
+                    
+                    <div id="chat-window" class="hidden chat-layout">
+                        <div class="chat-header">
+                            <button onclick="closeChatWindow()" class="btn-icon">◄</button>
+                            <div id="chat-active-mini" class="mini-avatar"></div>
+                            <h3 id="chat-active-name" onclick="openPieceProfile()">Nome da Peça</h3>
+                        </div>
+                        
+                        <div id="chat-messages-container" class="messages-area"></div>
+                        
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input-field" list="cmd-list" placeholder="Ex: upar poder, foto, segredo...">
+                            <datalist id="cmd-list">
+                                <option value="segredo"><option value="status"><option value="upar poder"><option value="upar custo"><option value="foto"><option value="bloquear">
+                            </datalist>
+                            <button onclick="sendChatMessage()" class="btn-send">➤</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-deck" class="tab-pane hidden">
+                    <div class="deck-header">
+                        <h2>Inventário de Sinergias</h2>
+                        <p>Arraste e encaixe as peças no seu Grid para equipá-las.</p>
+                    </div>
+                    
+                    <div class="grid-container">
+                        <div id="inventory-grid"></div>
+                    </div>
+                    
+                    <div id="available-pieces-list" class="horizontal-scroll"></div>
+                </div>
+
+                <div id="tab-arena" class="tab-pane hidden">
+                    <div class="arena-prep" id="arena-prep-screen">
+                        <h2>Pronto para Sobreviver?</h2>
+                        <div class="equipped-summary" id="equipped-summary"></div>
+                        <button onclick="startTetris()" class="btn-primary btn-large">Iniciar Partida</button>
+                    </div>
+
+                    <div id="tetris-game-area" class="hidden">
+                        <div class="tetris-sidebar left">
+                            <div class="hold-box"><span>HOLD</span><div id="tetris-hold-render"></div></div>
+                            <div class="stats-box"><p>Score: <br><span id="t-score">0</span></p><p>Linhas: <br><span id="t-lines">0</span></p></div>
+                        </div>
+                        
+                        <canvas id="tetris-canvas" width="240" height="480"></canvas>
+                        
+                        <div class="tetris-sidebar right">
+                            <div class="next-box"><span>NEXT</span><div id="tetris-next-render"></div></div>
+                            <div id="tetris-ultimates" class="ultimates-container"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="virtual-dpad" class="hidden"></div>
+                </div>
+
+                <div id="tab-shop" class="tab-pane hidden">
+                    <h2 class="shop-title">Mercado Obscuro</h2>
+                    <div class="shop-items" id="shop-container"></div>
+                </div>
+
+            </div>
+
+            <nav class="bottom-nav">
+                <button class="nav-item active" onclick="switchTab('tab-swipe', this)">🔍</button>
+                <button class="nav-item" onclick="switchTab('tab-chat', this)">💬</button>
+                <button class="nav-item" onclick="switchTab('tab-deck', this)">🎒</button>
+                <button class="nav-item" onclick="switchTab('tab-arena', this)">🕹️</button>
+                <button class="nav-item" onclick="switchTab('tab-shop', this)">🛒</button>
+            </nav>
+        </div>
+
+        <div id="modal-player-profile" class="modal hidden">
+            <div class="modal-content">
+                <h2 style="color: var(--accent-blue);">Seu Perfil</h2>
+                <div class="xp-container">
+                    <p>Nível <span id="modal-pl-level">1</span></p>
+                    <div class="xp-bar-bg"><div id="modal-pl-xp-fill" class="xp-bar-fill"></div></div>
+                    <small id="modal-pl-xp-text" style="color: var(--text-muted);">0 / 500 XP</small>
+                </div>
+                
+                <h3 style="margin-top: 15px; font-size: 14px; color: var(--accent-gold);">Roda da Vida (Traços)</h3>
+                <canvas id="radar-chart" width="250" height="250" style="margin: 10px 0;"></canvas>
+                
+                <p id="modal-pl-grid-size" style="font-size: 12px; color: var(--text-muted);"></p>
+                <button onclick="closeModal('modal-player-profile')" class="btn-secondary" style="width: 100%; margin-top: 15px;">Fechar</button>
+            </div>
+        </div>
+
+        <div id="modal-piece-profile" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="modal-p-name">Nome da Peça</h2>
+                <div id="modal-p-render" class="piece-wrapper large"></div>
+                <div id="modal-p-stats" class="stats-scroll"></div>
+                <button onclick="blockPiece()" class="btn-danger" style="width: 100%; margin-bottom: 10px;">Bloquear e Reciclar (Poeira)</button>
+                <button onclick="closeModal('modal-piece-profile')" class="btn-secondary" style="width: 100%;">Fechar</button>
+            </div>
+        </div>
+
+        <div id="modal-photo" class="modal hidden photo-overlay">
+            <h2>Registro de Sinergia</h2>
+            <div id="photo-canvas-area" class="photo-frame"></div>
+            <div class="photo-actions">
+                <button onclick="downloadWallpaper()" class="btn-primary">Baixar Imagem</button>
+                <button onclick="closeModal('modal-photo')" class="btn-secondary">Voltar</button>
+            </div>
+        </div>
+
+        <div id="modal-levelup" class="modal hidden" style="z-index: 999;">
+            <div class="modal-content">
+                <h2 style="color: var(--accent-gold); font-size: 28px; text-shadow: 0 0 10px var(--accent-gold);">LEVEL UP!</h2>
+                <p style="margin-top: 10px; font-size: 16px;">Você alcançou o Nível <b id="lu-new-level" style="color: var(--accent-blue);">2</b>!</p>
+                <p style="margin-top: 5px; color: var(--accent-red);">Energia Máxima aumentada para <b id="lu-new-energy">6</b> ❤️</p>
+                <div id="lu-grid-msg" style="margin-top: 10px; font-size: 12px; color: var(--accent-green);"></div>
+                
+                <h3 style="margin-top:20px; font-size: 14px;">Escolha um traço para aprimorar (+1):</h3>
+                <div class="menu-buttons" style="width:100%; margin-top:15px;">
+                    <button class="btn-secondary" onclick="applyLevelUpTrait('agressivo')" style="border-left: 4px solid var(--accent-red);">Agressivo</button>
+                    <button class="btn-secondary" onclick="applyLevelUpTrait('estrategista')" style="border-left: 4px solid var(--accent-blue);">Estrategista</button>
+                    <button class="btn-secondary" onclick="applyLevelUpTrait('caotico')" style="border-left: 4px solid var(--accent-purple);">Caótico</button>
+                    <button class="btn-secondary" onclick="applyLevelUpTrait('calmo')" style="border-left: 4px solid var(--accent-green);">Calmo</button>
+                    <button class="btn-secondary" onclick="applyLevelUpTrait('misterioso')" style="border-left: 4px solid #fff;">Misterioso</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="scripts/data.js"></script>
+    <script src="scripts/state.js"></script>
+    <script src="scripts/main-ui.js"></script>
+    <script src="scripts/swipe.js"></script>
+    <script src="scripts/chat.js"></script>
+    <script src="scripts/deck.js"></script>
+    <script src="scripts/tetris.js"></script>
+</body>
+</html>
