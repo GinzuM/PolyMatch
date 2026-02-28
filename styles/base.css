@@ -1,0 +1,111 @@
+/* ==========================================
+   styles/base.css
+   Variáveis, Tipografia e Estrutura Principal
+   ========================================== */
+
+:root {
+    /* Paleta de Cores - Dark/Cyberpunk Theme */
+    --bg-base: #0a0a0c;
+    --bg-panel: #14141a;
+    --bg-nav: #050508;
+    
+    --text-main: #e0e0e0;
+    --text-muted: #888890;
+    
+    --accent-red: #ff2a55;
+    --accent-blue: #00f0ff;
+    --accent-green: #00ff88;
+    --accent-gold: #ffc107;
+    --accent-purple: #b537f2;
+    
+    --border-radius: 12px;
+}
+
+/* Reset Básico e Fontes */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    user-select: none; /* Evita selecionar texto jogando no mobile */
+}
+
+h1, h2, h3 { 
+    font-family: 'Orbitron', sans-serif; 
+}
+
+/* Fundo da Página (Fora do Jogo) */
+body.dark-theme {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* O "Celular" virtual onde o jogo roda */
+#game-container {
+    width: 100%;
+    max-width: 480px;
+    height: 100%;
+    max-height: 850px;
+    background-color: var(--bg-panel);
+    position: relative;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Telas de Overlay Base */
+.screen {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: var(--bg-panel);
+    z-index: 10;
+    padding: 20px;
+}
+
+/* Contêiner das abas do Hub */
+.hub-content {
+    flex: 1;
+    overflow-y: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-pane {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: var(--bg-panel);
+}
+
+/* Classes Auxiliares */
+.hidden { 
+    display: none !important; 
+}
+
+.highlight-text {
+    color: var(--accent-gold);
+}
+
+.clickable {
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.clickable:active {
+    transform: scale(0.95);
+}
